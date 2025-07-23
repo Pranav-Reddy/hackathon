@@ -51,7 +51,7 @@ const Goals = () => {
   return (
     <div className="page-container">
     <div className="goals-container">
-      <h1>Your Financial Goals</h1>
+      <h1>People's Financial Goals</h1>
       <p>Here's a breakdown of people's typical financial goals and their allocation.</p>
 
       {/* Pie Chart */}
@@ -65,8 +65,6 @@ const Goals = () => {
           Financial goals help individuals manage their income and plan for future needs. The sections above
           represent how people typically allocate their finances across different categories. Adjustments can
           be made based on personal priorities.
-
-	  Here's how yours compares:
         </p>
       </div>
     </div>
