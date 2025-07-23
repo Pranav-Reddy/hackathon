@@ -5,7 +5,7 @@ import { faUserCircle } from '@fortawesome/free-solid-svg-icons';  // User icon 
 
 const Settings = () => {
   // State variables
-  const [username, setUsername] = useState('Andrewtootru'); // Mocked username
+  const [username, setUsername] = useState('Your username'); // Mocked username
   const [textSize, setTextSize] = useState('medium'); // Medium by default
   const [financialGoal, setFinancialGoal] = useState('Savings');
 
