@@ -3,10 +3,9 @@ import './Settings.css'; // Import custom styles for Settings page
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle } from '@fortawesome/free-solid-svg-icons';  // User icon from Font Awesome
 
-
 const Settings = () => {
   // State variables
-  const [username, setUsername] = useState('andrewgmartin1999'); // Mocked username
+  const [username, setUsername] = useState('Andrewtootru'); // Mocked username
   const [textSize, setTextSize] = useState('medium'); // Medium by default
   const [financialGoal, setFinancialGoal] = useState('Savings');
 
@@ -16,8 +15,9 @@ const Settings = () => {
   };
 
   // Handle financial goal change
-  const handleGoalChange = (event) => {
-    setFinancialGoal(event.target.value);
+  const handleGoalChange = () => {
+    // Just a placeholder for button action
+    alert('Change goals functionality is not implemented yet.');
   };
 
   return (
@@ -29,28 +29,25 @@ const Settings = () => {
 
       <h1>Settings</h1>
 
-      <div className="setting-item">
-        <label>Username</label>
-        <p>{username}</p>
+      <div className="settings-row">
+        <div className="setting-item">
+          <label>Username</label>
+          <p>{username}</p>
+        </div>
+
+        <div className="setting-item">
+          <label>Text Size</label>
+          <select value={textSize} onChange={handleTextSizeChange}>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
       </div>
 
+      {/* Button to change financial goal */}
       <div className="setting-item">
-        <label>Text Size</label>
-        <select value={textSize} onChange={handleTextSizeChange}>
-          <option value="small">Small</option>
-          <option value="medium">Medium</option>
-          <option value="large">Large</option>
-        </select>
-      </div>
-
-      <div className="setting-item">
-        <label>Financial Goal</label>
-        <input
-          type="text"
-          value={financialGoal}
-          onChange={handleGoalChange}
-          placeholder="Enter your new goal"
-        />
+        <button className="goal-button" onClick={handleGoalChange}>Change Goals</button>
       </div>
     </div>
   );
