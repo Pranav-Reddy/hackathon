@@ -7,30 +7,56 @@ import { Progress } from "../homepage-components/Progress.js";
 
 
 import {
-  LineChart,
+  ComposedChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area
 } from "recharts";
 
 export default function Home() {
   const [spending, setSpending] = useState(0);
   const [goal, setGoal] = useState(1000);
   const [spendingData, setSpendingData] = useState([]);
+  const [selectedSpending, setSelectedSpending] = useState([]);
   const [timeframe, setTimeframe] = useState("day");
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleAddSpending = () => {
     const now = new Date();
     const label = now.toLocaleString();
-    setSpendingData([...spendingData, { time: label, amount: spending }]);
+    const newEntry = { time: label, amount: spending };
+    setSpendingData([...spendingData, newEntry]);
+    setSelectedSpending([...selectedSpending, true]);
     alert("Spending saved!");
   };
 
+  const handleToggleSpending = (index) => {
+    const updated = [...selectedSpending];
+    updated[index] = !updated[index];
+    setSelectedSpending(updated);
+  };
+
+  const handleDeleteSpending = (index) => {
+    const updatedData = spendingData.filter((_, i) => i !== index);
+    const updatedSelection = selectedSpending.filter((_, i) => i !== index);
+    setSpendingData(updatedData);
+    setSelectedSpending(updatedSelection);
+  };
+
+  const handleSelectAll = () => {
+    setSelectedSpending(new Array(spendingData.length).fill(true));
+  };
+
   const getFilteredData = () => {
-    if (spendingData.length <= 1) return spendingData.map((d, i) => ({ ...d, cumulative: d.amount }));
+    const includedData = spendingData
+      .map((d, i) => ({ ...d, included: selectedSpending[i] }))
+      .filter((d) => d.included);
+
+    if (includedData.length <= 1) return includedData.map((d) => ({ ...d, cumulative: d.amount }));
 
     const now = new Date();
     const dayMs = 24 * 60 * 60 * 1000;
@@ -42,15 +68,16 @@ export default function Home() {
     else if (timeframe === "week") cutoff = now.getTime() - weekMs;
     else cutoff = now.getTime() - monthMs;
 
-    const data = spendingData.filter(d => new Date(d.time).getTime() >= cutoff);
+    const data = includedData.filter((d) => new Date(d.time).getTime() >= cutoff);
     let cumulative = 0;
-    return data.map(d => {
+    return data.map((d) => {
       cumulative += d.amount;
       return { ...d, cumulative };
     });
   };
 
   const filteredData = getFilteredData();
+  const totalSpent = spendingData.reduce((sum, entry, i) => selectedSpending[i] ? sum + entry.amount : sum, 0);
 
   const tabClasses = (tab) =>
     `px-3 py-1 rounded border ${
@@ -63,9 +90,7 @@ export default function Home() {
       <nav className="bg-white shadow p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">FinanceCoach</h1>
         <div className="space-x-4">
-          <Dialog
-            trigger={<Button className="bg-white text-black border">Add Today's Spending</Button>}
-          >
+          <Dialog trigger={<Button className="bg-white text-black border">Add Today's Spending</Button>}>
             {({ close }) => (
               <>
                 <h2 className="text-lg font-semibold mb-4">Enter Spending</h2>
@@ -97,14 +122,49 @@ export default function Home() {
         <Card className="max-w-md mx-auto mb-6">
           <CardContent>
             <p className="text-lg">Goal: ${goal}</p>
-            <p className="text-lg">Spent: ${spending}</p>
+            <p className="text-lg">Total Spent: ${totalSpent}</p>
+            <div className="mt-2">
+              <Button
+                className="text-sm bg-gray-100 text-blue-700 hover:bg-gray-200"
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                {showDetails ? "Hide" : "Show"} Spending History
+              </Button>
+              {showDetails && (
+                <>
+                  <div className="flex justify-between items-center mt-2">
+                    <Button className="text-xs" onClick={handleSelectAll}>Select All</Button>
+                  </div>
+                  <ul style={{listStyleType: 'none'}} className="mt-2 max-h-48 overflow-y-auto text-sm text-gray-700">
+                    {spendingData.map((entry, idx) => (
+                      <li key={idx} className="py-1 border-b flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedSpending[idx]}
+                            onChange={() => handleToggleSpending(idx)}
+                          />
+                          <span>{entry.time} — ${entry.amount}</span>
+                          <button
+                            className="text-red-500 hover:text-red-700 text-xs ml-2"
+                            onClick={() => handleDeleteSpending(idx)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                </>
+              )}
+            </div>
             <div className="mt-4">
-              <Progress value={(spending / goal) * 100} />
+              <Progress value={(totalSpent / goal) * 100} />
             </div>
           </CardContent>
         </Card>
 
-{/* TODO: Make spending progress chart into component */}
         <div className="max-w-3xl mx-auto">
           <div className="flex space-x-2 mb-4 justify-end">
             <button onClick={() => setTimeframe("day")} className={tabClasses("day")}>1D</button>
@@ -112,18 +172,17 @@ export default function Home() {
             <button onClick={() => setTimeframe("month")} className={tabClasses("month")}>1M</button>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="time" tick={{ fontSize: 12 }} minTickGap={20} />
               <YAxis />
               <Tooltip />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="cumulative"
-                stroke="#93c5fd"
-                strokeWidth={2}
-                dot={false}
-                opacity={0.3}
+                stroke="none"
+                fill="#22c55e"
+                fillOpacity={0.2}
               />
               <Line
                 type="monotone"
@@ -132,10 +191,11 @@ export default function Home() {
                 strokeWidth={2}
                 dot={false}
               />
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </main>
     </div>
   );
 }
+
