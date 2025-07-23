@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-// import './Settings.css'; // Import custom styles for Settings page
+import './Settings.css'; // Import custom styles for Settings page
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle } from '@fortawesome/free-solid-svg-icons';  // User icon from Font Awesome
 
 const Settings = () => {
   // State variables
-  const [username, setUsername] = useState('Andrewtootru'); // Mocked username
+  const [username, setUsername] = useState('Your username'); // Mocked username
   const [textSize, setTextSize] = useState('medium'); // Medium by default
   const [financialGoal, setFinancialGoal] = useState('Savings');
 
