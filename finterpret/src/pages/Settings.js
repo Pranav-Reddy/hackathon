@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Settings.css'; // Import custom styles for Settings page
+// import './Settings.css'; // Import custom styles for Settings page
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle } from '@fortawesome/free-solid-svg-icons';  // User icon from Font Awesome
 
@@ -21,6 +21,7 @@ const Settings = () => {
   };
 
   return (
+    <div className="page-container">
     <div className={`settings-container ${textSize}`}>
       {/* Profile Icon */}
       <div className="profile-icon">
@@ -49,6 +50,7 @@ const Settings = () => {
       <div className="setting-item">
         <button className="goal-button" onClick={handleGoalChange}>Change Goals</button>
       </div>
+    </div>
     </div>
   );
 };
