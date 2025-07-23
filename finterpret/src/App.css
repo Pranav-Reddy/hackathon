@@ -1,38 +1,79 @@
+/* App.css */
+
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to bottom right, #f5f5f5, #e8f5e9);
+  /*background: linear-gradient(to bottom right, #ffffff, #e0f2f1);*/
+  color: #1a1a1a;
+  height: 100%;
+}
+
 .App {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin-top: 50px;
-}
-
-button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.popup {
-  position: fixed;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -30%);
-  background: white;
-  border: 2px solid #ccc;
-  padding: 20px;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-.navbar {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  gap: 30px;
-  padding: 10px;
-  background-color: #f4f4f4;
-  border-bottom: 1px solid #ccc;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-bottom: 80px; /* for space above bottom nav */
 }
 
-.navbar a {
+nav.bottom-tab-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  width: calc(100% - 60px); /* adds 20px of space on each side */
+  max-width: 400px;
+  padding: 10px 20px;
+  z-index: 100;
+}
+
+
+.tab-icon {
+  background: #d4edda;
+  color: #2e7d32;
+  padding: 12px;
+  border-radius: 50%;
   text-decoration: none;
-  font-weight: bold;
-  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.tab-icon:hover {
+  transform: scale(1.1);
+  background: #c8e6c9;
+}
+
+.tab-icon svg {
+  color: #2e7d32;
+}
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;   /* vertical centering */
+  align-items: center;       /* horizontal centering */
+  min-height: calc(100vh - 120px); /* leave room for nav bar */
+  padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+@media screen and (max-width: 600px) {
+  .tab-icon {
+    padding: 10px;
+  }
+
+  nav.bottom-tab-nav {
+    bottom: 15px;
+  }
 }

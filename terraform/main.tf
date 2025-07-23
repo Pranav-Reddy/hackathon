@@ -1,3 +1,12 @@
+terraform {
+  cloud {
+    organization = "db-hackathon-2025"
+    workspaces {
+      name = "eclipseWorkSpace"
+    }
+  }
+}
+
 resource "google_storage_bucket" "my_github_bucket" {
   name                        = "hack-team-eclipse_tfc_bucket"
   location                    = "europe-west1"
