@@ -2,6 +2,9 @@ import React from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale } from 'chart.js';
 
+// Import custom CSS for Goals page
+import './Goals.css'; // Make sure the path is correct
+
 // Registering the required Chart.js components
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale);
 
@@ -26,6 +29,25 @@ const Goals = () => {
     ],
   };
 
+  // Options for customizing the chart size
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false, // Allow resizing through CSS
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      tooltip: {
+        callbacks: {
+          label: function(tooltipItem) {
+            return tooltipItem.label + ': ' + tooltipItem.raw + '%';
+          },
+        },
+      },
+    },
+    aspectRatio: 1,  // Make the chart square (1:1 ratio)
+  };
+
   return (
     <div className="goals-container">
       <h1>People's Financial Goals</h1>
@@ -33,7 +55,7 @@ const Goals = () => {
 
       {/* Pie Chart */}
       <div className="chart-container">
-        <Pie data={data} />
+        <Pie data={data} options={options} />
       </div>
 
       <div className="goal-info">

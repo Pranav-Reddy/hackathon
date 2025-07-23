@@ -21,9 +21,10 @@ p {
   margin: 20px 0;
 }
 
+/* Resize the chart container */
 .chart-container {
-  width: 80%;
-  max-width: 600px;
+  width: 300px;  /* Set a fixed width */
+  height: 300px; /* Set a fixed height */
   margin: 30px 0;
 }
 
