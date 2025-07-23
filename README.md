@@ -392,7 +392,8 @@ Examples:
     * [Terraform](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/notebooks_instance#service_account)
 * [Workflows](https://cloud.google.com/workflows/docs/authentication#deploy_a_workflow_with_a_custom_service_account)
     * [Terraform](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/workflows_workflow#service_account)
-* [Vertex AI](https://cloud.google.com/vertex-ai/docs/general/custom-service-account#attach)
+* [Vertex AI Workbench instances](https://cloud.google.com/vertex-ai/docs/workbench/instances/create)
+* [Vertex AI generally](https://cloud.google.com/vertex-ai/docs/general/custom-service-account#attach)
     * Vertex AI's Console UI does not always expose the field necessary to specify a user managed SA.  
       However, most such screens have a `View Code` button in the top right.
       The generated code is populated with the fields you entered in the UI.
