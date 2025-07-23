@@ -49,6 +49,7 @@ const Goals = () => {
   };
 
   return (
+    <div className="page-container">
     <div className="goals-container">
       <h1>Your Financial Goals</h1>
       <p>Here's a breakdown of people's typical financial goals and their allocation.</p>
@@ -68,6 +69,7 @@ const Goals = () => {
 	  Here's how yours compares:
         </p>
       </div>
+    </div>
     </div>
   );
 };
