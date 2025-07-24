@@ -1,3 +1,10 @@
 Flask==2.3.3
-google-cloud-storage==2.16.0
+google-cloud-vision==3.10.2
+google-cloud-speech==2.26.0
 google-cloud-bigquery==3.17.2
+google-cloud-aiplatform==1.44.0
+google-cloud-texttospeech==2.15.0
+simpleaudio==1.0.4
+pyaudio==0.2.14
+Pillow==10.2.0
+pyautogui==0.9.54
