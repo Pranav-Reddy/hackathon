@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import PopupQuestionnaire from './components/PopupQuestionnaire';
+import { FaHome, FaBullseye, FaUserFriends, FaCog } from 'react-icons/fa';
 
 import Home from './pages/Home';
 import Goals from './pages/Goals';
@@ -21,11 +22,19 @@ function App() {
 
         {!showPopup && (
           <>
-            <nav className="navbar">
-              <Link to="/">Home</Link>
-              <Link to="/goals">Goals</Link>
-              <Link to="/advisory">Advisory</Link>
-              <Link to="/settings">Settings</Link>
+            <nav className="bottom-tab-nav">
+              <Link to="/" className="tab-icon">
+                <FaHome size={24} />
+              </Link>
+              <Link to="/goals" className="tab-icon">
+                <FaBullseye size={24} />
+              </Link>
+              <Link to="/advisory" className="tab-icon">
+                <FaUserFriends size={24} />
+              </Link>
+              <Link to="/settings" className="tab-icon">
+                <FaCog size={24} />
+              </Link>
             </nav>
 
             <Routes>

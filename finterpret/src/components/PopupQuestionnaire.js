@@ -77,7 +77,8 @@ export default function PopupQuestionnaire({ onClose }) {
   return (
     <div className="popup-overlay">
       <div className="popup-content">
-        <h2>Financial Check-In</h2>
+        <button className="close-button" onClick={onClose}>×</button>
+        <h2>💰 Financial Check-In</h2>
         <p>{q.question}</p>
         <div className="options">
           {q.options.map((opt, index) => (
@@ -89,4 +90,5 @@ export default function PopupQuestionnaire({ onClose }) {
       </div>
     </div>
   );
+
 }
