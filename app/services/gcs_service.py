@@ -4,7 +4,7 @@ from google.cloud import storage
 from app.config import Config
 
 def download_blob(filename, override_bucket=None):
-    client = storage.Client(project="hack-team-eclipse")
+    client = storage.Client(project="hackathon-470421")
     bucket_name = override_bucket or Config.BUCKET_NAME
     print(bucket_name)
     destination_path = f"/tmp/{filename}"
@@ -23,6 +23,16 @@ def download_blob(filename, override_bucket=None):
         }
     )
 
+def download_withkey():
+    SERVICE_ACCOUNT_KEY_PATH = "C:\\Users\\prana\\Documents\\hackathon\\keyfile.json"
+    BUCKET_NAME = "hack-team-eclipse-test-bucket"
+    BLOB_NAME = "test.txt"
+    client = storage.Client.from_service_account_json(SERVICE_ACCOUNT_KEY_PATH)
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(BLOB_NAME)
+    content = blob.download_as_text()
+    print("File contents:")
+    print(content)
 def get_records_from_bq():
     client = bigquery.Client()
 

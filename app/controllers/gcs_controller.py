@@ -7,17 +7,28 @@ from app.services.gcs_service import get_user_context
 from app.services.gemini_service import generate_answer
 from app.services.vision_service import recognize_product_from_image
 from app.services.search_service import search_product_links
+from app.services.gcs_service import download_withkey
 
 gcs_bp = Blueprint('gcs', __name__)
 bq_bp = Blueprint("bq_bp", __name__)
 image_qna_bp = Blueprint("image_qna_bp", __name__)
 product_bp = Blueprint("product", __name__)
+test_bp = Blueprint("test", __name__)
+
+
 
 @gcs_bp.route("/download/<filename>", methods=["GET"])
 def download(filename):
     bucket = request.args.get("bucket")
     try:
         return download_blob(filename, bucket)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@test_bp.route("/test", methods=["GET"])
+def test():
+    try:
+        return download_withkey()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
