@@ -1,10 +1,12 @@
+from tkinter import ttk
 import tkinter as tk
 import pyautogui
 import io
 import threading
 import wave
 import pyaudio
-from PIL import Image
+import sys
+from PIL import Image, ImageTk
 from google.cloud import vision, speech
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
@@ -14,12 +16,243 @@ import tempfile
 import os
 import base64
 
-PROJECT_ID = "hack-team-eclipse"  # Replace with your actual project ID
+PROJECT_ID = "hackathon-470421"  # Replace with your actual project ID
 LOCATION = "us-central1"
 
 # Global variables for lazy initialization
 _model = None
 _initialized = False
+
+# Global language setting (default to English US)
+LANGUAGE = "en-US"
+
+# Translation dictionary for UI text
+TRANSLATIONS = {
+    "en-US": {
+        "app_title": "Snip Tool",
+        "take_snip": "Take Snip",
+        "fraud_detection": "Scam/Fraud Detection",
+        "record_audio": "Record Audio",
+        "ask_question": "Ask Your Question",
+        "record_instruction": "Record your question about the image:",
+        "start_recording": "Start Recording",
+        "stop_process": "Stop & Process",
+        "cancel": "Cancel",
+        "recording": "Recording...",
+        "processing": "Processing...",
+        "snip_instruction": "Click and drag to select area for {mode}. Press ESC to cancel.",
+        "fraud_mode": "fraud detection",
+        "qa_mode": "Q&A",
+        "security_alert": "⚠️ SCAM/FRAUD DETECTED! ⚠️",
+        "close_alert": "🛡️ CLOSE ALERT",
+        "report_scam": "📢 REPORT SCAM",
+        "selection_too_small": "Selection too small. Please try again.",
+        "invalid_selection": "Invalid selection. Please try again.",
+        "screenshot_error": "Error taking screenshot: {error}",
+        "ocr_extracted": "OCR Extracted",
+        "image_labels": "Image Labels",
+        "no_text_found": "No text found",
+        "no_labels_found": "No labels found",
+        "your_question": "Your Question",
+        "gemini_answer": "Gemini Answer",
+        "no_speech_detected": "No speech detected. Please try again.",
+        "recording_error": "An error occurred during recording.",
+        "fraud_analysis": "Analyzing image for scam/fraud...",
+        "fraud_result": "Fraud Detection Result",
+        "no_fraud_detected": "No fraud detected - content appears safe",
+        "analysis_complete": "Analysis complete. {result}",
+        "error_fraud_detection": "Error during fraud detection: {error}",
+        "error_processing_image": "Error processing image: {error}",
+        "language_set": "Language set to: {language}",
+        "unknown_language": "Unknown language '{language}', using default: {default}",
+        "supported_languages": "Supported languages: en, es, fr, de, it, pt, ja, ko, zh",
+        "default_language": "Using default language: {language}",
+        "usage": "Usage: python script.py [language]",
+        "example": "Example: python script.py es (for Spanish)"
+    },
+    "es-ES": {
+        "app_title": "Herramienta de Captura",
+        "take_snip": "Tomar Captura",
+        "fraud_detection": "Detección de Estafas",
+        "record_audio": "Grabar Audio",
+        "ask_question": "Haz Tu Pregunta",
+        "record_instruction": "Graba tu pregunta sobre la imagen:",
+        "start_recording": "Comenzar Grabación",
+        "stop_process": "Parar y Procesar",
+        "cancel": "Cancelar",
+        "recording": "Grabando...",
+        "processing": "Procesando...",
+        "snip_instruction": "Haz clic y arrastra para seleccionar área para {mode}. Presiona ESC para cancelar.",
+        "fraud_mode": "detección de estafas",
+        "qa_mode": "preguntas y respuestas",
+        "security_alert": "⚠️ ¡ESTAFA DETECTADA! ⚠️",
+        "close_alert": "🛡️ CERRAR ALERTA",
+        "report_scam": "📢 REPORTAR ESTAFA",
+        "selection_too_small": "Selección muy pequeña. Inténtalo de nuevo.",
+        "invalid_selection": "Selección inválida. Inténtalo de nuevo.",
+        "screenshot_error": "Error al tomar captura: {error}",
+        "ocr_extracted": "OCR Extraído",
+        "image_labels": "Etiquetas de Imagen",
+        "no_text_found": "No se encontró texto",
+        "no_labels_found": "No se encontraron etiquetas",
+        "your_question": "Tu Pregunta",
+        "gemini_answer": "Respuesta de Gemini",
+        "no_speech_detected": "No se detectó voz. Inténtalo de nuevo.",
+        "recording_error": "Ocurrió un error durante la grabación.",
+        "fraud_analysis": "Analizando imagen para estafas/fraudes...",
+        "fraud_result": "Resultado de Detección de Fraude",
+        "no_fraud_detected": "No se detectó fraude - el contenido parece seguro",
+        "analysis_complete": "Análisis completo. {result}",
+        "error_fraud_detection": "Error durante la detección de fraude: {error}",
+        "error_processing_image": "Error procesando imagen: {error}",
+        "language_set": "Idioma configurado a: {language}",
+        "unknown_language": "Idioma desconocido '{language}', usando predeterminado: {default}",
+        "supported_languages": "Idiomas soportados: en, es, fr, de, it, pt, ja, ko, zh",
+        "default_language": "Usando idioma predeterminado: {language}",
+        "usage": "Uso: python script.py [idioma]",
+        "example": "Ejemplo: python script.py es (para Español)"
+    },
+    "fr-FR": {
+        "app_title": "Outil de Capture",
+        "take_snip": "Prendre Capture",
+        "fraud_detection": "Détection d'Escroqueries",
+        "record_audio": "Enregistrer Audio",
+        "ask_question": "Posez Votre Question",
+        "record_instruction": "Enregistrez votre question sur l'image:",
+        "start_recording": "Commencer l'Enregistrement",
+        "stop_process": "Arrêter et Traiter",
+        "cancel": "Annuler",
+        "recording": "Enregistrement...",
+        "processing": "Traitement...",
+        "snip_instruction": "Cliquez et glissez pour sélectionner la zone pour {mode}. Appuyez sur ESC pour annuler.",
+        "fraud_mode": "détection d'escroqueries",
+        "qa_mode": "questions et réponses",
+        "security_alert": "⚠️ ESCROQUERIE DÉTECTÉE! ⚠️",
+        "close_alert": "🛡️ FERMER L'ALERTE",
+        "report_scam": "📢 SIGNALER L'ESCROQUERIE",
+        "selection_too_small": "Sélection trop petite. Veuillez réessayer.",
+        "invalid_selection": "Sélection invalide. Veuillez réessayer.",
+        "screenshot_error": "Erreur lors de la capture d'écran: {error}",
+        "ocr_extracted": "OCR Extrait",
+        "image_labels": "Étiquettes d'Image",
+        "no_text_found": "Aucun texte trouvé",
+        "no_labels_found": "Aucune étiquette trouvée",
+        "your_question": "Votre Question",
+        "gemini_answer": "Réponse de Gemini",
+        "no_speech_detected": "Aucune voix détectée. Veuillez réessayer.",
+        "recording_error": "Une erreur s'est produite pendant l'enregistrement.",
+        "fraud_analysis": "Analyse de l'image pour escroqueries/fraudes...",
+        "fraud_result": "Résultat de Détection de Fraude",
+        "no_fraud_detected": "Aucune fraude détectée - le contenu semble sûr",
+        "analysis_complete": "Analyse terminée. {result}",
+        "error_fraud_detection": "Erreur lors de la détection de fraude: {error}",
+        "error_processing_image": "Erreur lors du traitement de l'image: {error}",
+        "language_set": "Langue définie sur: {language}",
+        "unknown_language": "Langue inconnue '{language}', utilisation par défaut: {default}",
+        "supported_languages": "Langues supportées: en, es, fr, de, it, pt, ja, ko, zh",
+        "default_language": "Utilisation de la langue par défaut: {language}",
+        "usage": "Usage: python script.py [langue]",
+        "example": "Exemple: python script.py fr (pour Français)"
+    },
+    "de-DE": {
+        "app_title": "Bildschirm-Tool",
+        "take_snip": "Bildschirmfoto",
+        "fraud_detection": "Betrugs-Erkennung",
+        "record_audio": "Audio Aufnehmen",
+        "ask_question": "Stelle Deine Frage",
+        "record_instruction": "Nimm deine Frage zum Bild auf:",
+        "start_recording": "Aufnahme Starten",
+        "stop_process": "Stoppen & Verarbeiten",
+        "cancel": "Abbrechen",
+        "recording": "Aufnahme...",
+        "processing": "Verarbeitung...",
+        "snip_instruction": "Klicken und ziehen Sie, um den Bereich für {mode} auszuwählen. ESC zum Abbrechen.",
+        "fraud_mode": "Betrugs-Erkennung",
+        "qa_mode": "Fragen und Antworten",
+        "security_alert": "⚠️ BETRUG ERKANNT! ⚠️",
+        "close_alert": "🛡️ WARNUNG SCHLIESSEN",
+        "report_scam": "📢 BETRUG MELDEN",
+        "selection_too_small": "Auswahl zu klein. Bitte versuchen Sie es erneut.",
+        "invalid_selection": "Ungültige Auswahl. Bitte versuchen Sie es erneut.",
+        "screenshot_error": "Fehler beim Screenshot: {error}",
+        "ocr_extracted": "OCR Extrahiert",
+        "image_labels": "Bild-Labels",
+        "no_text_found": "Kein Text gefunden",
+        "no_labels_found": "Keine Labels gefunden",
+        "your_question": "Ihre Frage",
+        "gemini_answer": "Gemini Antwort",
+        "no_speech_detected": "Keine Sprache erkannt. Bitte versuchen Sie es erneut.",
+        "recording_error": "Ein Fehler ist während der Aufnahme aufgetreten.",
+        "fraud_analysis": "Analysiere Bild auf Betrug/Schwindel...",
+        "fraud_result": "Betrugs-Erkennungs-Ergebnis",
+        "no_fraud_detected": "Kein Betrug erkannt - Inhalt scheint sicher",
+        "analysis_complete": "Analyse abgeschlossen. {result}",
+        "error_fraud_detection": "Fehler bei Betrugs-Erkennung: {error}",
+        "error_processing_image": "Fehler bei Bildverarbeitung: {error}",
+        "language_set": "Sprache eingestellt auf: {language}",
+        "unknown_language": "Unbekannte Sprache '{language}', verwende Standard: {default}",
+        "supported_languages": "Unterstützte Sprachen: en, es, fr, de, it, pt, ja, ko, zh",
+        "default_language": "Verwende Standard-Sprache: {language}",
+        "usage": "Verwendung: python script.py [sprache]",
+        "example": "Beispiel: python script.py de (für Deutsch)"
+    },
+    "zh-CN": {
+        "app_title": "截图工具",
+        "take_snip": "截取屏幕",
+        "fraud_detection": "诈骗检测",
+        "record_audio": "录制音频",
+        "ask_question": "提出问题",
+        "record_instruction": "录制关于图像的问题:",
+        "start_recording": "开始录制",
+        "stop_process": "停止并处理",
+        "cancel": "取消",
+        "recording": "录制中...",
+        "processing": "处理中...",
+        "snip_instruction": "点击并拖拽选择{mode}区域。按ESC取消。",
+        "fraud_mode": "诈骗检测",
+        "qa_mode": "问答",
+        "security_alert": "⚠️ 检测到诈骗! ⚠️",
+        "close_alert": "🛡️ 关闭警报",
+        "report_scam": "📢 举报诈骗",
+        "selection_too_small": "选择区域太小。请重试。",
+        "invalid_selection": "无效选择。请重试。",
+        "screenshot_error": "截图错误: {error}",
+        "ocr_extracted": "OCR提取",
+        "image_labels": "图像标签",
+        "no_text_found": "未找到文本",
+        "no_labels_found": "未找到标签",
+        "your_question": "您的问题",
+        "gemini_answer": "Gemini回答",
+        "no_speech_detected": "未检测到语音。请重试。",
+        "recording_error": "录制过程中发生错误。",
+        "fraud_analysis": "正在分析图像是否存在诈骗/欺诈...",
+        "fraud_result": "诈骗检测结果",
+        "no_fraud_detected": "未检测到诈骗 - 内容似乎安全",
+        "analysis_complete": "分析完成。{result}",
+        "error_fraud_detection": "诈骗检测错误: {error}",
+        "error_processing_image": "图像处理错误: {error}",
+        "language_set": "语言设置为: {language}",
+        "unknown_language": "未知语言 '{language}'，使用默认: {default}",
+        "supported_languages": "支持的语言: en, es, fr, de, it, pt, ja, ko, zh",
+        "default_language": "使用默认语言: {language}",
+        "usage": "用法: python script.py [语言]",
+        "example": "示例: python script.py zh (中文)"
+    }
+}
+
+def get_text(key, **kwargs):
+    """Get translated text for the current language"""
+    # Get the translation dictionary for current language, fallback to English
+    lang_dict = TRANSLATIONS.get(LANGUAGE, TRANSLATIONS["en-US"])
+    text = lang_dict.get(key, TRANSLATIONS["en-US"].get(key, key))
+    
+    # Format with any provided arguments
+    if kwargs:
+        try:
+            return text.format(**kwargs)
+        except:
+            return text
+    return text
 
 def get_gemini_model():
     """Get or initialize the Gemini model (lazy initialization)"""
@@ -35,8 +268,11 @@ def get_gemini_model():
     
     return _model
 
-def text_to_audio(txt, lang="en-US"):
-    """Convert text to speech and play it"""
+def text_to_audio(txt, lang=None, save_to_file=True):
+    """Convert text to speech, play it, and optionally save to WAV file"""
+    if lang is None:
+        lang = LANGUAGE
+        
     try:
         # Language mapping
         voice_map = {
@@ -44,6 +280,12 @@ def text_to_audio(txt, lang="en-US"):
             "en-GB": "en-GB-Standard-A", 
             "es-ES": "es-ES-Standard-A",
             "fr-FR": "fr-FR-Standard-A",
+            "de-DE": "de-DE-Standard-A",
+            "it-IT": "it-IT-Standard-A",
+            "pt-BR": "pt-BR-Standard-A",
+            "ja-JP": "ja-JP-Standard-A",
+            "ko-KR": "ko-KR-Standard-A",
+            "zh-CN": "cmn-CN-Standard-A",
         }
         
         voice_name = voice_map.get(lang, "en-US-Standard-F")
@@ -69,6 +311,20 @@ def text_to_audio(txt, lang="en-US"):
             voice=voice_params,
             audio_config=audio_config
         )
+        
+        # Save to WAV file if requested
+        if save_to_file:
+            # Generate filename with timestamp
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"tts_output_{timestamp}.wav"
+            
+            try:
+                with open(filename, "wb") as audio_file:
+                    audio_file.write(response.audio_content)
+                print(f"💾 Audio saved to: {filename}")
+            except Exception as save_error:
+                print(f"⚠️ Could not save audio file: {save_error}")
         
         print("🎵 Playing audio response...")
         play_obj = sa.play_buffer(
@@ -96,7 +352,7 @@ def transcribe_speech(audio_path):
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=16000,
-        language_code="en-US"
+        language_code=LANGUAGE
     )
 
     response = client.recognize(config=config, audio=audio)
@@ -135,6 +391,223 @@ Please provide a helpful and accurate answer based on the visual content and tex
     except Exception as e:
         return f"Error generating response: {str(e)}"
 
+def detect_scam_fraud(labels, ocr_text, image_data=None):
+    """Detect scam/fraud using Gemini 2.5 Flash model."""
+    try:
+        # Get the model (lazy initialization)
+        model = get_gemini_model()
+        
+        # Predefined scam/fraud detection prompt
+        prompt = f"""
+Analyze this image for potential scams, fraud, phishing attempts, or malicious content. Look for:
+
+1. Suspicious URLs or domains
+2. Fake login pages
+3. Phishing emails or messages
+4. Fake security warnings
+5. Too-good-to-be-true offers
+6. Urgent action requests
+7. Suspicious payment requests
+8. Fake tech support messages
+9. Romance scams
+10. Investment/crypto scams
+
+Image Labels: {labels}
+
+OCR Text: {ocr_text}
+
+Respond with either:
+- "FRAUD DETECTED: [specific reason]" if you detect any scam/fraud indicators
+- "SAFE: No fraud indicators detected" if the content appears legitimate
+
+Be very thorough in your analysis and err on the side of caution.
+"""
+        
+        # Generate content
+        if image_data:
+            # Convert image to base64 for Gemini
+            image_part = Part.from_data(image_data, mime_type="image/png")
+            response = model.generate_content([prompt, image_part])
+        else:
+            response = model.generate_content(prompt)
+        
+        return response.text
+    
+    except Exception as e:
+        return f"Error analyzing for fraud: {str(e)}"
+
+class ScamDetectedPopup:
+    """Red malware-style popup for scam detection"""
+    def __init__(self, detection_result):
+        self.popup = tk.Tk()
+        self.popup.title("⚠️ SECURITY ALERT")
+        self.popup.geometry("450x300")
+        self.popup.resizable(False, False)
+        self.popup.configure(bg="#8B0000")  # Dark red background
+        
+        # Make it stay on top and grab attention
+        self.popup.attributes('-topmost', True)
+        self.popup.overrideredirect(True)
+        
+        # Center the window
+        self.popup.update_idletasks()
+        x = (self.popup.winfo_screenwidth() // 2) - (450 // 2)
+        y = (self.popup.winfo_screenheight() // 2) - (300 // 2)
+        self.popup.geometry(f"450x300+{x}+{y}")
+        
+        # Main frame with red border
+        main_frame = tk.Frame(self.popup, bg="#FF0000", relief="raised", bd=3)
+        main_frame.pack(fill="both", expand=True, padx=3, pady=3)
+        
+        # Inner frame
+        inner_frame = tk.Frame(main_frame, bg="#8B0000")
+        inner_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Warning icon and title
+        title_frame = tk.Frame(inner_frame, bg="#8B0000")
+        title_frame.pack(fill="x", pady=(10, 5))
+        
+        warning_label = tk.Label(
+            title_frame,
+            text=get_text("security_alert"),
+            font=("Arial", 18, "bold"),
+            bg="#8B0000",
+            fg="#FFFF00",  # Yellow text
+        )
+        warning_label.pack()
+        
+        # Blinking effect for urgency
+        def blink():
+            current_color = warning_label.cget("fg")
+            new_color = "#FFFF00" if current_color == "#FF0000" else "#FF0000"
+            warning_label.config(fg=new_color)
+            self.popup.after(500, blink)
+        
+        blink()
+        
+        # Detection result text
+        result_frame = tk.Frame(inner_frame, bg="#8B0000")
+        result_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        result_text = tk.Text(
+            result_frame,
+            font=("Arial", 11),
+            bg="#FFE4E1",  # Light red background
+            fg="#8B0000",  # Dark red text
+            wrap="word",
+            relief="solid",
+            bd=2,
+            height=8
+        )
+        result_text.pack(fill="both", expand=True)
+        result_text.insert("1.0", detection_result)
+        result_text.config(state="disabled")  # Make read-only
+        
+        # Buttons frame
+        button_frame = tk.Frame(inner_frame, bg="#8B0000")
+        button_frame.pack(fill="x", pady=(10, 10))
+        
+        # Close button
+        close_btn = tk.Button(
+            button_frame,
+            text=get_text("close_alert"),
+            command=self.close_popup,
+            font=("Arial", 12, "bold"),
+            bg="#FF4500",  # Orange red
+            fg="white",
+            relief="raised",
+            bd=3,
+            cursor="hand2"
+        )
+        close_btn.pack(side="right", padx=10)
+        
+        # Report button (placeholder)
+        report_btn = tk.Button(
+            button_frame,
+            text=get_text("report_scam"),
+            command=self.report_scam,
+            font=("Arial", 12, "bold"),
+            bg="#DC143C",  # Crimson
+            fg="white",
+            relief="raised",
+            bd=3,
+            cursor="hand2"
+        )
+        report_btn.pack(side="left", padx=10)
+        
+        # Make window draggable
+        def start_move(event):
+            self.popup.x = event.x
+            self.popup.y = event.y
+
+        def stop_move(event):
+            self.popup.x = None
+            self.popup.y = None
+
+        def do_move(event):
+            if hasattr(self.popup, 'x') and self.popup.x is not None and self.popup.y is not None:
+                deltax = event.x - self.popup.x
+                deltay = event.y - self.popup.y
+                x = self.popup.winfo_x() + deltax
+                y = self.popup.winfo_y() + deltay
+                self.popup.geometry(f"+{x}+{y}")
+
+        title_frame.bind("<Button-1>", start_move)
+        title_frame.bind("<ButtonRelease-1>", stop_move)
+        title_frame.bind("<B1-Motion>", do_move)
+        
+        self.popup.mainloop()
+    
+    def close_popup(self):
+        """Close the popup"""
+        self.popup.destroy()
+    
+    def report_scam(self):
+        """Placeholder for reporting functionality"""
+        print("Report scam functionality - could integrate with authorities or security services")
+        # You could implement actual reporting here
+
+class ModernButton:
+    """Custom modern button class"""
+    def __init__(self, parent, text, command, bg_color, hover_color, icon="", width=280, height=50):
+        self.command = command
+        self.bg_color = bg_color
+        self.hover_color = hover_color
+        
+        # Create frame for button
+        self.frame = tk.Frame(parent, bg=bg_color, height=height, width=width)
+        self.frame.pack_propagate(False)  # Maintain fixed size
+        self.frame.pack(pady=8, padx=20, fill='x')
+        
+        # Create button label
+        self.label = tk.Label(
+            self.frame,
+            text=f"{icon} {text}",
+            bg=bg_color,
+            fg="white",
+            font=("Segoe UI", 12, "bold"),
+            cursor="hand2"
+        )
+        self.label.pack(expand=True, fill='both')
+        
+        # Bind events
+        self.label.bind("<Button-1>", lambda e: self.command())
+        self.label.bind("<Enter>", self.on_enter)
+        self.label.bind("<Leave>", self.on_leave)
+        self.frame.bind("<Button-1>", lambda e: self.command())
+        self.frame.bind("<Enter>", self.on_enter)
+        self.frame.bind("<Leave>", self.on_leave)
+    
+    def on_enter(self, event):
+        """Handle mouse enter"""
+        self.frame.config(bg=self.hover_color)
+        self.label.config(bg=self.hover_color)
+    
+    def on_leave(self, event):
+        """Handle mouse leave"""
+        self.frame.config(bg=self.bg_color)
+        self.label.config(bg=self.bg_color)
+
 class SnippingToolOCR:
     def __init__(self):
         self.start_x = None
@@ -146,38 +619,137 @@ class SnippingToolOCR:
         self.labels = ""
         self.audio_path = tempfile.mktemp(suffix=".wav")
         self.recording = False
+        self.mode = "normal"  # "normal" or "fraud_detection"
         self.init_popup()
 
     def init_popup(self):
-        """Initialize the main popup window."""
+        """Initialize the modern main popup window."""
         self.popup = tk.Tk()
-        self.popup.title("Snipping OCR + QnA Tool")
-        self.popup.geometry("300x150")
+        self.popup.title(get_text("app_title"))
+        self.popup.geometry("320x250")
         self.popup.resizable(False, False)
-
-        tk.Label(self.popup, text="Choose an action:", font=("Arial", 14)).pack(pady=10)
-
-        tk.Button(
-            self.popup,
-            text="🖼️ Snip + Ask Question",
-            command=self.start_snipping,
-            width=25,
-            font=("Arial", 12),
-            bg="#4CAF50",
-            fg="white"
-        ).pack(pady=5)
+        self.popup.configure(bg="#f8f9fa")
         
-        tk.Button(
-            self.popup,
-            text="❌ Cancel",
-            command=self.popup.quit,
-            width=25,
-            font=("Arial", 12),
-            bg="#f44336",
-            fg="white"
-        ).pack(pady=5)
+        # Remove default window decorations for modern look
+        self.popup.overrideredirect(True)
+        
+        # Center the window
+        self.popup.update_idletasks()
+        x = (self.popup.winfo_screenwidth() // 2) - (320 // 2)
+        y = (self.popup.winfo_screenheight() // 2) - (250 // 2)
+        self.popup.geometry(f"320x250+{x}+{y}")
+        
+        # Add window shadow effect with border
+        main_frame = tk.Frame(self.popup, bg="white", relief="raised", bd=1)
+        main_frame.pack(fill="both", expand=True, padx=2, pady=2)
+        
+        # Title bar
+        title_frame = tk.Frame(main_frame, bg="white", height=40)
+        title_frame.pack(fill="x", padx=0, pady=0)
+        title_frame.pack_propagate(False)
+        
+        # Title and close button
+        title_label = tk.Label(
+            title_frame, 
+            text=get_text("app_title"), 
+            font=("Segoe UI", 14, "bold"), 
+            bg="white", 
+            fg="#2c3e50"
+        )
+        title_label.pack(side="left", padx=15, pady=10)
+        
+        close_btn = tk.Label(
+            title_frame, 
+            text="✕", 
+            font=("Segoe UI", 16), 
+            bg="white", 
+            fg="#7f8c8d",
+            cursor="hand2"
+        )
+        close_btn.pack(side="right", padx=15, pady=10)
+        close_btn.bind("<Button-1>", lambda e: self.popup.quit())
+        close_btn.bind("<Enter>", lambda e: close_btn.config(fg="#e74c3c"))
+        close_btn.bind("<Leave>", lambda e: close_btn.config(fg="#7f8c8d"))
+        
+        # Content frame
+        content_frame = tk.Frame(main_frame, bg="white")
+        content_frame.pack(fill="both", expand=True, padx=0, pady=(0, 20))
+        
+        # Modern buttons
+        ModernButton(
+            content_frame,
+            get_text("take_snip"),
+            self.start_normal_snipping,
+            "#007bff",  # Blue
+            "#0056b3",  # Darker blue on hover
+            "📷",
+            width=280,
+            height=50
+        )
+        
+        ModernButton(
+            content_frame,
+            get_text("fraud_detection"), 
+            self.start_fraud_detection,
+            "#dc3545",  # Red for security
+            "#c82333",  # Darker red on hover
+            "🛡️",
+            width=280,
+            height=50
+        )
+        
+        ModernButton(
+            content_frame,
+            get_text("record_audio"),
+            self.record_audio_only,
+            "#6c757d",  # Gray
+            "#545b62",  # Darker gray on hover
+            "🎙️",
+            width=280,
+            height=50
+        )
+        
+        # Make window draggable
+        def start_move(event):
+            self.popup.x = event.x
+            self.popup.y = event.y
+
+        def stop_move(event):
+            self.popup.x = None
+            self.popup.y = None
+
+        def do_move(event):
+            if self.popup.x is not None and self.popup.y is not None:
+                deltax = event.x - self.popup.x
+                deltay = event.y - self.popup.y
+                x = self.popup.winfo_x() + deltax
+                y = self.popup.winfo_y() + deltay
+                self.popup.geometry(f"+{x}+{y}")
+
+        title_frame.bind("<Button-1>", start_move)
+        title_frame.bind("<ButtonRelease-1>", stop_move)
+        title_frame.bind("<B1-Motion>", do_move)
+        title_label.bind("<Button-1>", start_move)
+        title_label.bind("<ButtonRelease-1>", stop_move)
+        title_label.bind("<B1-Motion>", do_move)
 
         self.popup.mainloop()
+
+    def start_normal_snipping(self):
+        """Start normal snipping mode with Q&A"""
+        self.mode = "normal"
+        self.start_snipping()
+    
+    def start_fraud_detection(self):
+        """Start fraud detection mode"""
+        self.mode = "fraud_detection"
+        self.start_snipping()
+    
+    def record_audio_only(self):
+        """Placeholder for audio-only functionality"""
+        print("Audio-only functionality not implemented yet")
+        # You can implement audio-only recording here
+        pass
 
     def start_snipping(self):
         """Start the screen snipping process."""
@@ -193,13 +765,16 @@ class SnippingToolOCR:
         self.canvas.bind("<ButtonPress-1>", self.on_mouse_down)
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
-        self.canvas.bind("<Escape>", lambda e: self.root.destroy())
+        self.canvas.bind("<Escape>", self.cancel_snipping)
+        self.canvas.bind("<Key>", self.handle_key_press)
+        self.canvas.focus_set()  # Enable keyboard events
 
-        # Add instruction label
+        # Add instruction label based on mode
+        mode_text = get_text("fraud_mode") if self.mode == "fraud_detection" else get_text("qa_mode")
         instruction = tk.Label(
             self.root,
-            text="Click and drag to select area. Press ESC to cancel.",
-            font=("Arial", 16),
+            text=get_text("snip_instruction", mode=mode_text),
+            font=("Segoe UI", 16),
             bg="black",
             fg="white"
         )
@@ -207,10 +782,25 @@ class SnippingToolOCR:
 
         self.root.mainloop()
 
+    def cancel_snipping(self, event):
+        """Cancel snipping and return to main menu"""
+        self.root.destroy()
+        self.__init__()
+    
+    def handle_key_press(self, event):
+        """Handle key press events during snipping"""
+        if event.keysym == 'Escape':
+            self.cancel_snipping(event)
+
     def on_mouse_down(self, event):
         """Handle mouse down event for selection."""
         self.start_x = self.canvas.canvasx(event.x)
         self.start_y = self.canvas.canvasy(event.y)
+        
+        # Delete any existing rectangle
+        if self.rect:
+            self.canvas.delete(self.rect)
+            
         self.rect = self.canvas.create_rectangle(
             self.start_x, self.start_y, self.start_x, self.start_y,
             outline='red', width=3
@@ -218,12 +808,21 @@ class SnippingToolOCR:
 
     def on_mouse_drag(self, event):
         """Handle mouse drag event for selection."""
-        cur_x = self.canvas.canvasx(event.x)
-        cur_y = self.canvas.canvasy(event.y)
-        self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
+        # Only update if we have valid start coordinates and rect
+        if self.start_x is not None and self.start_y is not None and self.rect:
+            cur_x = self.canvas.canvasx(event.x)
+            cur_y = self.canvas.canvasy(event.y)
+            self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
 
     def on_mouse_up(self, event):
         """Handle mouse up event to complete selection."""
+        # Check if we have valid start coordinates
+        if self.start_x is None or self.start_y is None:
+            print(get_text("invalid_selection"))
+            self.root.destroy()
+            self.__init__()
+            return
+            
         end_x = self.canvas.canvasx(event.x)
         end_y = self.canvas.canvasy(event.y)
         self.root.destroy()
@@ -235,12 +834,16 @@ class SnippingToolOCR:
 
         # Ensure minimum selection size
         if abs(x2 - x1) < 10 or abs(y2 - y1) < 10:
-            print("Selection too small. Please try again.")
+            print(get_text("selection_too_small"))
             self.__init__()
             return
 
-        self.screenshot = pyautogui.screenshot(region=(x1, y1, x2 - x1, y2 - y1))
-        self.process_image()
+        try:
+            self.screenshot = pyautogui.screenshot(region=(x1, y1, x2 - x1, y2 - y1))
+            self.process_image()
+        except Exception as e:
+            print(get_text("screenshot_error", error=str(e)))
+            self.__init__()
 
     def process_image(self):
         """Process the screenshot with OCR and image labeling."""
@@ -263,75 +866,196 @@ class SnippingToolOCR:
                 raise Exception(f"OCR Error: {response.error.message}")
 
             # Extract text and labels
-            self.ocr_text = response.full_text_annotation.text.strip() if response.full_text_annotation else "No text detected"
-            self.labels = ", ".join([label.description for label in label_response.label_annotations[:10]])  # Limit to top 10 labels
+            self.ocr_text = response.full_text_annotation.text.strip() if response.full_text_annotation else get_text("no_text_found")
+            self.labels = ", ".join([label.description for label in label_response.label_annotations[:10]]) or get_text("no_labels_found")
 
-            print("\n=== OCR Extracted ===")
-            print(self.ocr_text if self.ocr_text else "No text found")
-            print("\n=== Image Labels ===")
-            print(self.labels if self.labels else "No labels found")
+            print(f"\n=== {get_text('ocr_extracted')} ===")
+            print(self.ocr_text if self.ocr_text else get_text("no_text_found"))
+            print(f"\n=== {get_text('image_labels')} ===")
+            print(self.labels if self.labels else get_text("no_labels_found"))
 
-            self.init_record_popup()
+            # Process based on mode
+            if self.mode == "fraud_detection":
+                self.process_fraud_detection()
+            else:
+                self.init_record_popup()
 
         except Exception as e:
-            print(f"Error processing image: {str(e)}")
+            print(get_text("error_processing_image", error=str(e)))
             self.__init__()
 
+    def process_fraud_detection(self):
+        """Process image for fraud detection"""
+        try:
+            print(f"\n🛡️ {get_text('fraud_analysis')}")
+            
+            # Detect fraud using Gemini
+            detection_result = detect_scam_fraud(
+                self.labels,
+                self.ocr_text,
+                self.screenshot_data
+            )
+            
+            print(f"\n=== {get_text('fraud_result')} ===\n{detection_result}")
+            
+            # Check if fraud was detected
+            if "FRAUD DETECTED" in detection_result.upper():
+                # Show red malware-style popup
+                ScamDetectedPopup(detection_result)
+            else:
+                # Show safe result with TTS
+                safe_message = get_text("analysis_complete", result=detection_result)
+                text_to_audio(safe_message)
+                print(f"✅ {get_text('no_fraud_detected')}")
+                
+        except Exception as e:
+            error_msg = get_text("error_fraud_detection", error=str(e))
+            print(error_msg)
+            text_to_audio(get_text("recording_error"))
+
     def init_record_popup(self):
-        """Initialize the recording popup window."""
+        """Initialize the modern recording popup window."""
         self.rec_popup = tk.Tk()
-        self.rec_popup.title("Ask Your Question")
-        self.rec_popup.geometry("300x200")
+        self.rec_popup.title(get_text("ask_question"))
+        self.rec_popup.geometry("350x280")
         self.rec_popup.resizable(False, False)
-
-        tk.Label(self.rec_popup, text="Record your question:", font=("Arial", 12)).pack(pady=10)
-
-        self.record_button = tk.Button(
-            self.rec_popup,
-            text="🎤 Start Recording",
-            command=self.start_recording,
-            font=("Arial", 12),
-            bg="#2196F3",
-            fg="white",
-            width=20
+        self.rec_popup.configure(bg="#f8f9fa")
+        
+        # Remove default window decorations
+        self.rec_popup.overrideredirect(True)
+        
+        # Center the window
+        self.rec_popup.update_idletasks()
+        x = (self.rec_popup.winfo_screenwidth() // 2) - (350 // 2)
+        y = (self.rec_popup.winfo_screenheight() // 2) - (280 // 2)
+        self.rec_popup.geometry(f"350x280+{x}+{y}")
+        
+        # Add window shadow effect with border
+        main_frame = tk.Frame(self.rec_popup, bg="white", relief="raised", bd=1)
+        main_frame.pack(fill="both", expand=True, padx=2, pady=2)
+        
+        # Title bar
+        title_frame = tk.Frame(main_frame, bg="white", height=40)
+        title_frame.pack(fill="x", padx=0, pady=0)
+        title_frame.pack_propagate(False)
+        
+        title_label = tk.Label(
+            title_frame, 
+            text=get_text("ask_question"), 
+            font=("Segoe UI", 14, "bold"), 
+            bg="white", 
+            fg="#2c3e50"
         )
-        self.record_button.pack(pady=5)
-
-        self.stop_button = tk.Button(
-            self.rec_popup,
-            text="⏹️ Stop & Process",
-            command=self.stop_recording,
-            font=("Arial", 12),
-            bg="#FF9800",
-            fg="white",
-            width=20,
-            state="disabled"
+        title_label.pack(side="left", padx=15, pady=10)
+        
+        close_btn = tk.Label(
+            title_frame, 
+            text="✕", 
+            font=("Segoe UI", 16), 
+            bg="white", 
+            fg="#7f8c8d",
+            cursor="hand2"
         )
-        self.stop_button.pack(pady=5)
+        close_btn.pack(side="right", padx=15, pady=10)
+        close_btn.bind("<Button-1>", lambda e: self.rec_popup.quit())
+        close_btn.bind("<Enter>", lambda e: close_btn.config(fg="#e74c3c"))
+        close_btn.bind("<Leave>", lambda e: close_btn.config(fg="#7f8c8d"))
+        
+        # Content frame
+        content_frame = tk.Frame(main_frame, bg="white")
+        content_frame.pack(fill="both", expand=True, padx=0, pady=(0, 20))
+        
+        # Instruction label
+        tk.Label(
+            content_frame, 
+            text=get_text("record_instruction"), 
+            font=("Segoe UI", 11), 
+            bg="white", 
+            fg="#6c757d"
+        ).pack(pady=(15, 20))
+        
+        # Record button
+        self.record_button_widget = ModernButton(
+            content_frame,
+            get_text("start_recording"),
+            self.start_recording,
+            "#28a745",  # Green
+            "#1e7e34",  # Darker green on hover
+            "🎤",
+            width=300,
+            height=50
+        )
+        
+        # Stop button
+        self.stop_button_widget = ModernButton(
+            content_frame,
+            get_text("stop_process"),
+            self.stop_recording,
+            "#ffc107",  # Yellow
+            "#e0a800",  # Darker yellow on hover
+            "⏹️",
+            width=300,
+            height=50
+        )
+        
+        # Initially disable stop button
+        self.stop_button_widget.frame.pack_forget()
+        
+        # Cancel button
+        ModernButton(
+            content_frame,
+            get_text("cancel"),
+            self.rec_popup.quit,
+            "#dc3545",  # Red
+            "#c82333",  # Darker red on hover
+            "❌",
+            width=300,
+            height=45
+        )
+        
+        # Make window draggable
+        def start_move(event):
+            self.rec_popup.x = event.x
+            self.rec_popup.y = event.y
 
-        tk.Button(
-            self.rec_popup,
-            text="❌ Cancel",
-            command=self.rec_popup.quit,
-            font=("Arial", 12),
-            bg="#f44336",
-            fg="white",
-            width=20
-        ).pack(pady=5)
+        def stop_move(event):
+            self.rec_popup.x = None
+            self.rec_popup.y = None
+
+        def do_move(event):
+            if self.rec_popup.x is not None and self.rec_popup.y is not None:
+                deltax = event.x - self.rec_popup.x
+                deltay = event.y - self.rec_popup.y
+                x = self.rec_popup.winfo_x() + deltax
+                y = self.rec_popup.winfo_y() + deltay
+                self.rec_popup.geometry(f"+{x}+{y}")
+
+        title_frame.bind("<Button-1>", start_move)
+        title_frame.bind("<ButtonRelease-1>", stop_move)
+        title_frame.bind("<B1-Motion>", do_move)
+        title_label.bind("<Button-1>", start_move)
+        title_label.bind("<ButtonRelease-1>", stop_move)
+        title_label.bind("<B1-Motion>", do_move)
 
         self.rec_popup.mainloop()
 
     def start_recording(self):
         """Start audio recording."""
         self.recording = True
-        self.record_button.config(state="disabled", text="🔴 Recording...")
-        self.stop_button.config(state="normal")
+        
+        # Hide record button and show stop button
+        self.record_button_widget.frame.pack_forget()
+        self.stop_button_widget.frame.pack(pady=8, padx=20, fill='x')
+        
+        # Update stop button to show recording status
+        self.stop_button_widget.label.config(text=f"🔴 {get_text('recording')}")
+        
         threading.Thread(target=self.record_audio, daemon=True).start()
 
     def stop_recording(self):
         """Stop audio recording and process the question."""
         self.recording = False
-        self.stop_button.config(text="Processing...", state="disabled")
+        self.stop_button_widget.label.config(text=get_text("processing"))
         self.rec_popup.after(1000, self.rec_popup.quit)  # Close popup after 1 second
 
     def record_audio(self):
@@ -368,7 +1092,7 @@ class SnippingToolOCR:
 
             # Transcribe and get answer
             transcript = transcribe_speech(self.audio_path)
-            print(f"\n=== Your Question ===\n{transcript}")
+            print(f"\n=== {get_text('your_question')} ===\n{transcript}")
 
             if transcript.strip():
                 response = generate_gemini_answer(
@@ -377,15 +1101,15 @@ class SnippingToolOCR:
                     transcript,
                     self.screenshot_data
                 )
-                print(f"\n=== Gemini Answer ===\n{response}")
+                print(f"\n=== {get_text('gemini_answer')} ===\n{response}")
                 
-                # NEW: Convert response to speech and play it
+                # Convert response to speech and play it
                 text_to_audio(response)
                 
             else:
-                print("No speech detected. Please try again.")
+                print(get_text("no_speech_detected"))
                 # Play error message
-                text_to_audio("No speech detected. Please try again.")
+                text_to_audio(get_text("no_speech_detected"))
 
             # Clean up
             try:
@@ -394,11 +1118,57 @@ class SnippingToolOCR:
                 pass
 
         except Exception as e:
-            print(f"Error during recording: {str(e)}")
+            print(get_text("error_processing_image", error=str(e)))
             # Play error message
-            text_to_audio("An error occurred during recording.")
+            text_to_audio(get_text("recording_error"))
+
+def parse_language_argument():
+    """Parse language argument from command line"""
+    global LANGUAGE
+    
+    if len(sys.argv) > 1:
+        lang_arg = sys.argv[1].lower()
+        
+        # Language mapping
+        lang_mapping = {
+            "en": "en-US",
+            "en-us": "en-US",
+            "en-gb": "en-GB",
+            "es": "es-ES",
+            "fr": "fr-FR",
+            "de": "de-DE",
+            "it": "it-IT",
+            "pt": "pt-BR",
+            "ja": "ja-JP",
+            "ko": "ko-KR",
+            "zh": "zh-CN",
+            "chinese": "zh-CN",
+            "spanish": "es-ES",
+            "french": "fr-FR",
+            "german": "de-DE",
+            "italian": "it-IT",
+            "portuguese": "pt-BR",
+            "japanese": "ja-JP",
+            "korean": "ko-KR"
+        }
+        
+        if lang_arg in lang_mapping:
+            LANGUAGE = lang_mapping[lang_arg]
+            print(get_text("language_set", language=LANGUAGE))
+        else:
+            print(get_text("unknown_language", language=lang_arg, default=LANGUAGE))
+            print(get_text("supported_languages"))
+    else:
+        print(get_text("default_language", language=LANGUAGE))
+        print(get_text("usage"))
+        print(get_text("example"))
 
 if __name__ == "__main__":
-    print("Starting Snipping Tool OCR + QnA with Audio Response...")
+    print("🚀 Starting Modern Snipping Tool OCR + QnA with Fraud Detection...")
     print("Make sure you have set up Google Cloud credentials!")
+    
+    # Parse language argument
+    parse_language_argument()
+    
+    # Start the application
     SnippingToolOCR()
