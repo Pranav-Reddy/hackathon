@@ -9,8 +9,11 @@ Use our ocr and scam detection by setting up your python script
 > open git bash
 > 
 > export GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\hackathon-470421.json
+> 
 > python -m venv venv
+> 
 > source venv/Scripts/activate
+> 
 > pip install -r requirements.txt
 > python ocr.py en 
 ## What's here? :scroll:
