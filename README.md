@@ -3,6 +3,8 @@
 > [!IMPORTANT]
 > This README may be **changed or overwritten** by the hackathon organisers during the event.
 > If you intend to create documentation, please house it in a _separate file_.
+
+
 Use our ocr and scam detection by setting up your python script
 > open git bash
 export GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\hackathon-470421.json
