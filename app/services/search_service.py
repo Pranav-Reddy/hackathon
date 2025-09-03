@@ -7,7 +7,7 @@ def search_product_links(product_name, serpapi_key):
     import vertexai
 
     # Initialize Vertex AI (if not already initialized)
-    vertexai.init(project="hack-team-eclipse", location="us-central1")
+    vertexai.init(project="hackathon-470421", location="us-east1")
     model = GenerativeModel("gemini-1.5-flash")
 
     # Search shopping links using SerpAPI

@@ -41,7 +41,7 @@ def get_records_from_bq():
           ID,
           data.name AS name,
           data.age AS age
-        FROM `hack-team-eclipse.eclipse.ecilipse-test`
+        FROM `hackathon-470421.eclipse.ecilpse-test`
         LIMIT 10
     """
 
@@ -57,7 +57,7 @@ def get_user_context(user_id: str) -> dict:
 
     query = """
         SELECT data
-        FROM `hack-team-eclipse.eclipse.ecilipse-test`
+        FROM `hackathon-470421.eclipse.ecilpse-test`
         WHERE ID = @user_id
         LIMIT 1
     """

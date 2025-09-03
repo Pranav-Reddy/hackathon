@@ -1,7 +1,7 @@
 import vertexai
 from vertexai.generative_models import GenerativeModel
 
-vertexai.init(project="hack-team-eclipse", location="us-central1")
+vertexai.init(project="hackathon-470421", location="us-east1")
 model = GenerativeModel("gemini-2.5-flash")
 
 def generate_answer(ocr_text, labels, user_context):
